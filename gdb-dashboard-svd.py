@@ -101,7 +101,7 @@ class SVD(SVDDevicesHelper, Dashboard.Module):
                 self.__registers[index] = (p, r, value)
                 changed = True
 
-            line = ansi(f'{p.name}{r.name:{rname_format}} ({addr}): ',
+            line = ansi(f'{p.name} {r.name:{rname_format}} ({addr}): ',
                         R.style_low)
             line += ansi(f'{value}', R.style_selected_1 if changed else '')
             out.append(line)
