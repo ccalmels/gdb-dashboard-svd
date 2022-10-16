@@ -37,13 +37,16 @@ class SVDDevicesHelper():
 
     @staticmethod
     def get_addr_and_value(p, r):
-        gdb_pointer = gdb.selected_frame().architecture().integer_type(r.size, False).pointer()
+        gdb_pointer = gdb.selected_frame().architecture()\
+                                          .integer_type(r.size, False)\
+                                          .pointer()
         addr = gdb.Value(p.base_address + r.address_offset).cast(gdb_pointer)
 
         try:
             if gdb_pointer.sizeof * 8 == r.size \
                and (len(r.fields) == 0
-                    or (len(r.fields) == 1 and r.fields[0].bit_width == r.size)):
+                    or
+                    (len(r.fields) == 1 and r.fields[0].bit_width == r.size)):
                 # it looks like this register content can be seen as an address
                 value = f'{addr.dereference().cast(gdb_pointer)}'
             else:
@@ -98,7 +101,8 @@ class SVD(SVDDevicesHelper, Dashboard.Module):
                 self.__registers[index] = (p, r, value)
                 changed = True
 
-            line = ansi(f'{p.name}{r.name:{rname_format}} ({addr}): ', R.style_low)
+            line = ansi(f'{p.name}{r.name:{rname_format}} ({addr}): ',
+                        R.style_low)
             line += ansi(f'{value}', R.style_selected_1 if changed else '')
             out.append(line)
         return out
