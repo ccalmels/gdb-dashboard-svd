@@ -61,15 +61,12 @@ class SVDDevicesHelper():
         args = text.split(' ')
         elems = []
 
-        if len(args) > 0:
+        if len(args) == 1:
             for d in self.__devices:
                 elems += d.peripherals
-
-        if len(args) > 1:
-            periph = self.get_peripheral(args[0])
-            elems = periph.registers
-
-        if len(args) > 2:
+        elif len(args) == 2:
+            elems = self.get_peripheral(args[0]).registers
+        elif len(args) > 2:
             return gdb.COMPLETE_NONE
 
         return [x.name for x in elems if x.name.startswith(word)]
