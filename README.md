@@ -3,6 +3,7 @@
 ## Description
 
 A gdb-dashboard module to display SVD registers.
+![example](gdb-dashboard-svd.png)
 
 ## Installation
 
