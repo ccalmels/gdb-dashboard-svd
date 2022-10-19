@@ -70,6 +70,105 @@ class SVDDevicesHelper():
 
         return [x.name for x in elems if x.name.startswith(word)]
 
+    @staticmethod
+    def one_liner(description):
+        if description:
+            return ' '.join(description.split())
+        return ''
+
+    def info(self):
+        for d in self.__devices:
+            yield f'{d.name}:\n'
+
+            for p in d.peripherals:
+                yield f'\t{p.name} '\
+                    '({SVDDevicesHelper.one_liner(p.description)})\n'
+
+    def info_peripheral(self, peripheral):
+        p = self.get_peripheral(peripheral)
+        if p is not None:
+            yield f'{p.name}:\n'
+
+            for r in p.registers:
+                yield f'\t{r.name} '\
+                    '({SVDDevicesHelper.one_liner(r.description)})\n'
+
+    def info_register(self, peripheral, register):
+        p = self.get_peripheral(peripheral)
+        if p is not None:
+            r = SVDDevicesHelper.get_register(p, register)
+            if r is not None:
+                yield f'{r.name}:\n'
+
+                for f in r.fields:
+                    yield f'\t{f.name} '\
+                        '{f.bit_width + f.bit_offset}:{f.bit_offset} '\
+                        f'({SVDDevicesHelper.one_liner(f.description)})\n'
+
+
+class SVDPrefix(gdb.Command):
+    """Prefix SVD"""
+    def __init__(self):
+        super().__init__('svd', gdb.COMMAND_USER, gdb.COMPLETE_NONE, True)
+
+
+class SVDCommon(gdb.Command):
+    """Parent class for all standalone commands"""
+    def __init__(self, svd_devices_helper, name):
+        super().__init__('svd ' + name, gdb.COMMAND_DATA)
+        self._svd_devices_helper = svd_devices_helper
+
+    def complete(self, text, words):
+        return self._svd_devices_helper.complete(text, words)
+
+
+class SVDInfo(SVDCommon):
+    """Returns information about the devices, a peripheral or a register"""
+    def __init__(self, svd_devices_helper):
+        super().__init__(svd_devices_helper, 'info')
+
+    def invoke(self, argument, from_tty):
+        args = gdb.string_to_argv(argument)
+
+        if len(args) == 0:
+            info_iterator = self._svd_devices_helper.info()
+        elif len(args) == 1:
+            info_iterator = self._svd_devices_helper.info_peripheral(args[0])
+        elif len(args) == 2:
+            info_iterator = self._svd_devices_helper.\
+                info_register(args[0], args[1])
+        else:
+            gdb.write('Too much arguments\n')
+            return
+
+        for i in info_iterator:
+            gdb.write(i)
+
+
+class SVDGet(SVDCommon):
+    """Get the addresse and value of a register"""
+    def __init__(self, svd_devices_helper):
+        super().__init__(svd_devices_helper, 'get')
+
+    def invoke(self, argument, from_tty):
+        try:
+            peripheral, register = gdb.string_to_argv(argument)
+        except Exception:
+            gdb.write('Usage: add <peripheral> <register>\n')
+            return
+
+        p = self._svd_devices_helper.get_peripheral(peripheral)
+        if p is not None:
+            r = SVDDevicesHelper.get_register(p, register)
+            if r is not None:
+                addr, value = self._svd_devices_helper.get_addr_and_value(p, r)
+
+                gdb.write(f'{addr}: {value}\n')
+            else:
+                gdb.write(f'unknown register {register}')
+        else:
+            gdb.write(f'unknown peripheral {peripheral}')
+
 
 class SVD(SVDDevicesHelper, Dashboard.Module):
     """Display some registers defined in SVD files"""
@@ -107,6 +206,8 @@ class SVD(SVDDevicesHelper, Dashboard.Module):
         if arg:
             self.clear(None)
             SVDDevicesHelper.load(self, gdb.string_to_argv(arg))
+            SVDInfo(self)
+            SVDGet(self)
         else:
             raise Exception('No file specified')
 
@@ -189,3 +290,6 @@ class SVD(SVDDevicesHelper, Dashboard.Module):
     def attributes(self):
         return {
         }
+
+
+SVDPrefix()
