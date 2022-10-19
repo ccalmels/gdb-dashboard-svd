@@ -19,20 +19,27 @@ Then simply add gdb-dashboad-svd.py in your ~/.gdbinit.d/ directory.
 
 All commands benefit from a usefull completion.
 
-# Add some SVD files
+### Add some SVD files
 
 ```
 dashboard svd load ./cortex-m4-scb.svd ./nrf5340_application.svd
 ```
 
-# Add some registers to display 
+### Add some registers to display
 
 ```
 dashboard svd add SCB CFSR_UFSR_BFSR_MMFSR
 dashboard svd add SCB BFAR
 ```
 
-# Clear all registers
+### Remove some registers
+
+```
+dashboard svd remove SCB CFSR_UFSR_BFSR_MMFSR
+dashboard svd remove SCB BFAR
+```
+
+### Clear all registers
 
 ```
 dashboard svd clear

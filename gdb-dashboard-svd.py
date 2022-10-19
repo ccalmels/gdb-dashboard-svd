@@ -105,16 +105,16 @@ class SVD(SVDDevicesHelper, Dashboard.Module):
 
     def load(self, arg):
         if arg:
-            self.clear(arg)
-            SVDDevicesHelper.load(self, arg.split(' '))
+            self.clear(None)
+            SVDDevicesHelper.load(self, gdb.string_to_argv(arg))
         else:
             raise Exception('No file specified')
 
-    def add(self, arg):
+    def get_register(self, name, arg):
         try:
-            peripheral, register = arg.split(' ')
+            peripheral, register = gdb.string_to_argv(arg)
         except Exception:
-            raise Exception('Usage: add <peripheral> <register>')
+            raise Exception(f'Usage: {name} <peripheral> <register>')
 
         p = self.get_peripheral(peripheral)
         if p is None:
@@ -122,13 +122,43 @@ class SVD(SVDDevicesHelper, Dashboard.Module):
 
         r = SVDDevicesHelper.get_register(p, register)
         if r is None:
-            raise Exception(f'Register {register} not found')
+            raise Exception(f'Register {register} not found '
+                            f'for peripheral {peripheral}')
 
-        for other_p, other_r, _ in self.__registers:
+        for other_p, other_r, v in self.__registers:
             if other_p is p and other_r is r:
-                raise Exception(f'{arg} already registered')
+                return (p, r, v), True
 
-        self.__registers.append((p, r, None))
+        return (p, r, None), False
+
+    def add(self, arg):
+        register, is_present = self.get_register('add', arg)
+
+        if is_present:
+            raise Exception(f'{arg} already registered')
+
+        self.__registers.append(register)
+
+    def remove(self, arg):
+        register, is_present = self.get_register('remove', arg)
+
+        if not is_present:
+            raise Exception(f'Register {arg} is not registered')
+
+        self.__registers.remove(register)
+
+    def remove_complete(self, text, word):
+        args = text.split(' ')
+        elems = []
+
+        if len(args) == 1:
+            elems = [p for p, _, _ in self.__registers]
+        elif len(args) == 2:
+            elems = [r for p, r, _ in self.__registers if p.name == args[0]]
+        elif len(args) > 2:
+            return gdb.COMPLETE_NONE
+
+        return [x.name for x in elems if x.name.startswith(word)]
 
     def clear(self, arg):
         self.__registers.clear()
@@ -137,13 +167,18 @@ class SVD(SVDDevicesHelper, Dashboard.Module):
         return {
             'load': {
                 'action': self.load,
-                'doc': 'Load a SVD file',
+                'doc': 'Load SVD files',
                 'complete': gdb.COMPLETE_FILENAME,
             },
             'add': {
                 'action': self.add,
                 'doc': 'Add a register to display',
                 'complete': self.complete,
+            },
+            'remove': {
+                'action': self.remove,
+                'doc': 'Remove a register',
+                'complete': self.remove_complete,
             },
             'clear': {
                 'action': self.clear,
