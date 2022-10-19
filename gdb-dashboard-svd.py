@@ -3,9 +3,8 @@ from cmsis_svd.parser import SVDParser
 
 
 class SVDDevicesHelper():
-    """ Helper to ease SVD device utilization """
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    """Helper to ease SVD device utilization"""
+    def __init__(self):
         self.__devices = []
 
     def load(self, files):
@@ -73,9 +72,9 @@ class SVDDevicesHelper():
 
 
 class SVD(SVDDevicesHelper, Dashboard.Module):
-    """ Registers from SVD """
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    """Display some registers defined in SVD files"""
+    def __init__(self):
+        super().__init__()
         self.__registers = []
 
     def label(self):
