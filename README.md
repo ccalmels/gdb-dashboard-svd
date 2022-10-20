@@ -48,6 +48,6 @@ dashboard svd clear
 
 ## Standalone commmands
 
-This module also creates two directs gdb commands:
+This module also creates two gdb commands:
 * ```svd info [<peripheral> [<register>]]```
 * ```svd get <peripheral> <register>```
