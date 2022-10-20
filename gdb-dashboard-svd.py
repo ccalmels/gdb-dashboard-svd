@@ -65,7 +65,7 @@ class SVDDevicesHelper():
                 elems += d.peripherals
         elif len(args) == 2:
             elems = self.get_peripheral(args[0]).registers
-        elif len(args) > 2:
+        else:
             return gdb.COMPLETE_NONE
 
         return [x.name for x in elems if x.name.startswith(word)]
@@ -256,7 +256,7 @@ class SVD(SVDDevicesHelper, Dashboard.Module):
             elems = [p for p, _, _ in self.__registers]
         elif len(args) == 2:
             elems = [r for p, r, _ in self.__registers if p.name == args[0]]
-        elif len(args) > 2:
+        else:
             return gdb.COMPLETE_NONE
 
         return [x.name for x in elems if x.name.startswith(word)]
