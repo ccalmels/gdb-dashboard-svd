@@ -82,7 +82,7 @@ class SVDDevicesHelper():
 
             for p in d.peripherals:
                 yield f'\t{p.name} '\
-                    '({SVDDevicesHelper.one_liner(p.description)})\n'
+                    f'({SVDDevicesHelper.one_liner(p.description)})\n'
 
     def info_peripheral(self, peripheral):
         p = self.get_peripheral(peripheral)
@@ -91,7 +91,7 @@ class SVDDevicesHelper():
 
             for r in p.registers:
                 yield f'\t{r.name} '\
-                    '({SVDDevicesHelper.one_liner(r.description)})\n'
+                    f'({SVDDevicesHelper.one_liner(r.description)})\n'
 
     def info_register(self, peripheral, register):
         p = self.get_peripheral(peripheral)
@@ -102,7 +102,7 @@ class SVDDevicesHelper():
 
                 for f in r.fields:
                     yield f'\t{f.name} '\
-                        '{f.bit_width + f.bit_offset}:{f.bit_offset} '\
+                        f'{f.bit_width + f.bit_offset}:{f.bit_offset} '\
                         f'({SVDDevicesHelper.one_liner(f.description)})\n'
 
 
