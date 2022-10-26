@@ -98,7 +98,7 @@ class SVDDevicesHelper():
         if p is not None:
             r = SVDDevicesHelper.get_register(p, register)
             if r is not None:
-                yield f'{r.name}:\n'
+                yield f'{r.name} ({r.access}):\n'
 
                 for f in r.fields:
                     yield f'\t{f.name} '\
@@ -237,6 +237,9 @@ class SVD(SVDDevicesHelper, Dashboard.Module):
 
         if is_present:
             raise Exception(f'{arg} already registered')
+
+        if register[1].access in ['write-only', 'writeOnce']:
+            raise Exception(f'{arg} not readable register')
 
         self.__registers.append(register)
 
