@@ -165,9 +165,9 @@ class SVDGet(SVDCommon):
 
                 gdb.write(f'{addr}: {value}\n')
             else:
-                gdb.write(f'unknown register {register}')
+                gdb.write(f'unknown register {register}\n')
         else:
-            gdb.write(f'unknown peripheral {peripheral}')
+            gdb.write(f'unknown peripheral {peripheral}\n')
 
 
 class SVD(SVDDevicesHelper, Dashboard.Module):
