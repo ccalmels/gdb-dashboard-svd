@@ -36,20 +36,23 @@ class SVDDevicesHelper():
 
     @staticmethod
     def get_addr_and_value(p, r):
+        pointer_size = 8 * gdb.lookup_type('long').pointer().sizeof
+        register_size = r.size if r.size is not None else pointer_size
         gdb_pointer = gdb.selected_frame().architecture()\
-                                          .integer_type(r.size, False)\
+                                          .integer_type(register_size, False)\
                                           .pointer()
         addr = gdb.Value(p.base_address + r.address_offset).cast(gdb_pointer)
 
         try:
-            if gdb_pointer.sizeof * 8 == r.size \
+            if pointer_size == register_size \
                and (len(r.fields) == 0
                     or
-                    (len(r.fields) == 1 and r.fields[0].bit_width == r.size)):
+                    (len(r.fields) == 1
+                     and r.fields[0].bit_width == register_size)):
                 # it looks like this register content can be seen as an address
                 value = f'{addr.dereference().cast(gdb_pointer)}'
             else:
-                register_format = f'0>{int(r.size / 4)}x'
+                register_format = f'0>{int(register_size / 4)}x'
                 value = f'0x{int(addr.dereference()):{register_format}}'
         except Exception:
             value = '<unavailable>'
