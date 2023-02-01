@@ -12,10 +12,10 @@ class SVDDevicesHelper():
 
         for f in files:
             device = SVDParser.for_xml_file(f).get_device()
-            if device is not None:
-                self.__devices.append(device)
-            else:
+            if device is None:
                 raise Exception(f'unable to load {f}')
+
+            self.__devices.append(device)
 
     def devices_name(self):
         return [x.name for x in self.__devices]
@@ -217,13 +217,13 @@ class SVD(SVDDevicesHelper, Dashboard.Module):
         return out
 
     def load(self, arg):
-        if arg:
-            self.clear(None)
-            SVDDevicesHelper.load(self, gdb.string_to_argv(arg))
-            SVDInfo(self)
-            SVDGet(self)
-        else:
+        if not arg:
             raise Exception('No file specified')
+
+        self.clear(None)
+        SVDDevicesHelper.load(self, gdb.string_to_argv(arg))
+        SVDInfo(self)
+        SVDGet(self)
 
     def get_register(self, name, arg):
         try:
