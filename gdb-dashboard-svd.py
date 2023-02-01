@@ -168,7 +168,7 @@ class SVDGet(SVDCommon):
         try:
             peripheral, register = gdb.string_to_argv(argument)
         except Exception:
-            gdb.write('Usage: add <peripheral> <register>\n')
+            gdb.write('Usage: get <peripheral> <register>\n')
             return
 
         p = self._svd_devices_helper.get_peripheral(peripheral)
