@@ -84,29 +84,40 @@ class SVDDevicesHelper():
             yield f'{d.name}:\n'
 
             for p in d.peripherals:
-                yield f'\t{p.name} '\
-                    f'({SVDDevicesHelper.one_liner(p.description)})\n'
+                base = gdb.Value(p.base_address)\
+                          .cast(gdb.lookup_type('long').pointer())
+
+                yield f'\t{p.name}'\
+                    f'\tbase: {base}'\
+                    f' ({SVDDevicesHelper.one_liner(p.description)})\n'
 
     def info_peripheral(self, peripheral):
         p = self.get_peripheral(peripheral)
         if p is not None:
-            yield f'{p.name}:\n'
+            base = gdb.Value(p.base_address)\
+                      .cast(gdb.lookup_type('long').pointer())
+
+            yield f'{p.name} base: {base}\n'
 
             for r in p.registers:
-                yield f'\t{r.name} '\
-                    f'({SVDDevicesHelper.one_liner(r.description)})\n'
+                yield f'\t{r.name}'\
+                    f'\toffset: {r.address_offset:#x}'\
+                    f' ({SVDDevicesHelper.one_liner(r.description)})\n'
 
     def info_register(self, peripheral, register):
         p = self.get_peripheral(peripheral)
         if p is not None:
             r = SVDDevicesHelper.get_register(p, register)
             if r is not None:
-                yield f'{r.name} ({r.access}):\n'
+                addr = gdb.Value(p.base_address + r.address_offset)\
+                          .cast(gdb.lookup_type('long').pointer())
+
+                yield f'{r.name} addr: {addr} (access: {r.access})\n'
 
                 for f in r.fields:
-                    yield f'\t{f.name} '\
-                        f'{f.bit_width + f.bit_offset}:{f.bit_offset} '\
-                        f'({SVDDevicesHelper.one_liner(f.description)})\n'
+                    yield f'\t{f.name}'\
+                        f'\t{f.bit_width + f.bit_offset}:{f.bit_offset}'\
+                        f' ({SVDDevicesHelper.one_liner(f.description)})\n'
 
 
 class SVDPrefix(gdb.Command):
