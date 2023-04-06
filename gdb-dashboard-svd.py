@@ -115,8 +115,12 @@ class SVDDevicesHelper():
                 yield f'{r.name} addr: {addr} (access: {r.access})\n'
 
                 for f in r.fields:
+                    if f.bit_width == 1:
+                        bits = f'{f.bit_offset}'
+                    else:
+                        bits = f'{f.bit_width + f.bit_offset - 1}:{f.bit_offset}'
                     yield f'\t{f.name}'\
-                        f'\t{f.bit_width + f.bit_offset}:{f.bit_offset}'\
+                        f'\t[{bits}]'\
                         f' ({SVDDevicesHelper.one_liner(f.description)})\n'
 
 
