@@ -2,14 +2,12 @@
 
 ## Description
 
-A gdb-dashboard module to display SVD registers.
+A [gdb-dashboard](https://github.com/cyrus-and/gdb-dashboard) module to display SVD registers.
 ![example](gdb-dashboard-svd.png)
 
 ## Installation
 
-This module needs a patched version of gdb-dashboard for a proper subcommand completion. PR in progress... It can be found [here](https://github.com/ccalmels/gdb-dashboard/tree/override_gdb_command_complete_method).
-
-This project also depends on [cmsis-svd](https://pip.pypa.io/en/stable/cli/pip_show/).
+This project depends on [cmsis-svd](https://pip.pypa.io/en/stable/cli/pip_show/) and requires a least gdb-dashboard version 0.17.
 ```
 $ pip3 install -r ./requirements.txt
 ```
