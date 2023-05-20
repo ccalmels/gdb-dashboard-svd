@@ -11,6 +11,7 @@ class SVDDevicesHelper():
         self.__devices.clear()
 
         for f in files:
+            f = os.path.expandvars(os.path.expanduser(f))
             device = SVDParser.for_xml_file(f).get_device()
             if device is None:
                 raise Exception(f'unable to load {f}')
