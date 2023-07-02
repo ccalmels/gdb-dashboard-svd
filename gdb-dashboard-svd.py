@@ -38,7 +38,42 @@ class SVDDevicesHelper():
         return None
 
     @staticmethod
-    def get_addr_and_value(p, r):
+    def split_argv(args):
+        parameters = []
+        options = []
+
+        for arg in args:
+            (options if arg.startswith('/') else parameters).append(arg)
+
+        if len(options) > 1:
+            raise Exception('only one format allowed')
+
+        if len(options) == 0:
+            return args, None
+
+        if options[0] not in ['/a', '/x', '/u', '/t', '/_t']:
+            raise Exception(f'unknown option: {options[0]}')
+
+        return parameters, options[0]
+
+    @staticmethod
+    def convert_format(fmt, register_size_in_bits):
+        if fmt == '/a':
+            return 'address'
+        if fmt == '/u':
+            return f'd'
+        if fmt == '/t':
+            return f'#0{register_size_in_bits + 2}b'
+        if fmt == '/_t':
+            nb_separators = (register_size_in_bits + 3) // 4 - 1
+            return f'#0{register_size_in_bits + nb_separators + 2}_b'
+        if fmt == '/x':
+            return f'#0{(register_size_in_bits + 3) // 4 + 2}x'
+
+        raise Exception('Unkonw format \'fmt\'')
+
+    @staticmethod
+    def get_addr_and_value(p, r, fmt, styling=False):
         pointer_size = 8 * gdb.lookup_type('long').pointer().sizeof
         register_size = r.size if r.size is not None else pointer_size
         gdb_pointer = gdb.selected_frame().architecture()\
@@ -47,34 +82,38 @@ class SVDDevicesHelper():
         addr = gdb.Value(p.base_address + r.address_offset).cast(gdb_pointer)
 
         try:
-            if pointer_size == register_size \
-               and (len(r.fields) == 0
-                    or
-                    (len(r.fields) == 1
-                     and r.fields[0].bit_width == register_size)):
-                # it looks like this register content can be seen as an address
-                value = f'{addr.dereference().cast(gdb_pointer)}'
+            if fmt == 'address':
+                value = addr.dereference().cast(gdb_pointer).format_string(styling=styling)
             else:
-                register_format = f'0>{int(register_size / 4)}x'
-                value = f'0x{int(addr.dereference()):{register_format}}'
-        except Exception:
+                value = f'{int(addr.dereference()):{fmt}}'
+
+        except Exception as e:
             value = '<unavailable>'
 
-        return f'{addr}', value
+        return addr.format_string(styling=styling), value
 
     def complete(self, text, word):
-        args = text.split(' ')
-        elems = []
+        args = gdb.string_to_argv(text)
+
+        if len(args) > 0:
+            if args[-1] == '/' or (word and args[-1][0] == '/'):
+                return [ x for x in [ 'a', 'x', 'u', 't', '_t' ] if x.startswith(word) ]
+            if word:
+                args.pop()
+
+        # strip out options
+        args = [ x for x in args if not x.startswith('/') ]
+
+        if len(args) == 0:
+            peripherals = []
+            for d in self.__devices:
+                peripherals += d.peripherals
+            return [ x.name for x in peripherals if x.name.startswith(word) ]
 
         if len(args) == 1:
-            for d in self.__devices:
-                elems += d.peripherals
-        elif len(args) == 2:
-            elems = self.get_peripheral(args[0]).registers
-        else:
-            return gdb.COMPLETE_NONE
+            return [ x.name for x in self.get_peripheral(args[0]).registers if x.name.startswith(word) ]
 
-        return [x.name for x in elems if x.name.startswith(word)]
+        return gdb.COMPLETE_NONE
 
     @staticmethod
     def one_liner(description):
@@ -90,9 +129,9 @@ class SVDDevicesHelper():
                 base = gdb.Value(p.base_address)\
                           .cast(gdb.lookup_type('long').pointer())
 
-                yield f'\t{p.name}'\
-                    f'\tbase: {base}'\
-                    f' ({SVDDevicesHelper.one_liner(p.description)})\n'
+                yield (f'\t{p.name}'
+                       f'\tbase: {base}'
+                       f' ({SVDDevicesHelper.one_liner(p.description)})\n')
 
     def info_peripheral(self, peripheral):
         p = self.get_peripheral(peripheral)
@@ -103,9 +142,9 @@ class SVDDevicesHelper():
             yield f'{p.name} base: {base}\n'
 
             for r in p.registers:
-                yield f'\t{r.name}'\
-                    f'\toffset: {r.address_offset:#x}'\
-                    f' ({SVDDevicesHelper.one_liner(r.description)})\n'
+                yield (f'\t{r.name}'
+                       f'\toffset: {r.address_offset:#x}'
+                       f' ({SVDDevicesHelper.one_liner(r.description)})\n')
 
     def info_register(self, peripheral, register):
         p = self.get_peripheral(peripheral)
@@ -178,18 +217,35 @@ class SVDGet(SVDCommon):
 
     def invoke(self, argument, from_tty):
         try:
-            peripheral, register = gdb.string_to_argv(argument)
+            args, fmt = SVDDevicesHelper.split_argv(gdb.string_to_argv(argument))
+            peripheral, register = args
         except Exception:
-            gdb.write('Usage: get <peripheral> <register>\n')
+            gdb.write('Usage: get [/axut_t] <peripheral> <register>\n')
             return
 
         p = self._svd_devices_helper.get_peripheral(peripheral)
         if p is not None:
             r = SVDDevicesHelper.get_register(p, register)
             if r is not None:
-                addr, value = self._svd_devices_helper.get_addr_and_value(p, r)
+                pointer_size = 8 * gdb.lookup_type('long').pointer().sizeof
+                register_size = r.size if r.size is not None else pointer_size
 
-                gdb.write(f'{addr}: {value}\n')
+                # try to guess format if not given
+                if fmt is None:
+                    if pointer_size == register_size \
+                       and (len(r.fields) == 0
+                            or
+                            (len(r.fields) == 1
+                             and r.fields[0].bit_width == register_size)):
+                        # looks like an address
+                        fmt = '/a'
+                    else:
+                        fmt = '/x'
+
+                fmt = SVDDevicesHelper.convert_format(fmt, register_size)
+                addr, value = SVDDevicesHelper.get_addr_and_value(p, r, fmt, from_tty)
+
+                gdb.write(f'{addr}:\t{value}\n')
             else:
                 gdb.write(f'unknown register {register}\n')
         else:
@@ -215,7 +271,8 @@ class SVD(SVDDevicesHelper, Dashboard.Module):  # noqa: F821
 
         for index, (p, r, old_value) in enumerate(self.__registers):
             rname_format = f'>{int(term_width / 4 - len(p.name))}'
-            addr, value = SVDDevicesHelper.get_addr_and_value(p, r)
+            addr, value = SVDDevicesHelper.get_addr_and_value(
+                p, r, f'#0{(r.size + 3) // 4 + 2}x')
 
             if old_value and old_value == value:
                 changed = False
