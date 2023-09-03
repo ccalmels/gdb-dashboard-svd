@@ -1,9 +1,11 @@
 import gdb
+import os
 from cmsis_svd.parser import SVDParser
 
 
 class SVDDevicesHelper():
     """Helper to ease SVD device utilization"""
+
     def __init__(self):
         self.__devices = []
 
@@ -119,20 +121,23 @@ class SVDDevicesHelper():
                     if f.bit_width == 1:
                         bits = f'{f.bit_offset}'
                     else:
-                        bits = f'{f.bit_width + f.bit_offset - 1}:{f.bit_offset}'
-                    yield f'\t{f.name}'\
-                        f'\t[{bits}]'\
-                        f' ({SVDDevicesHelper.one_liner(f.description)})\n'
+                        bits = (f'{f.bit_width + f.bit_offset - 1}:'
+                                f'{f.bit_offset}')
+                    yield (f'\t{f.name}'
+                           f'\t[{bits}]'
+                           f' ({SVDDevicesHelper.one_liner(f.description)})\n')
 
 
 class SVDPrefix(gdb.Command):
     """Prefix SVD"""
+
     def __init__(self):
         super().__init__('svd', gdb.COMMAND_USER, gdb.COMPLETE_NONE, True)
 
 
 class SVDCommon(gdb.Command):
     """Parent class for all standalone commands"""
+
     def __init__(self, svd_devices_helper, name):
         super().__init__('svd ' + name, gdb.COMMAND_DATA)
         self._svd_devices_helper = svd_devices_helper
@@ -143,6 +148,7 @@ class SVDCommon(gdb.Command):
 
 class SVDInfo(SVDCommon):
     """Returns information about the devices, a peripheral or a register"""
+
     def __init__(self, svd_devices_helper):
         super().__init__(svd_devices_helper, 'info')
 
@@ -166,6 +172,7 @@ class SVDInfo(SVDCommon):
 
 class SVDGet(SVDCommon):
     """Get the addresse and value of a register"""
+
     def __init__(self, svd_devices_helper):
         super().__init__(svd_devices_helper, 'get')
 
@@ -189,8 +196,9 @@ class SVDGet(SVDCommon):
             gdb.write(f'unknown peripheral {peripheral}\n')
 
 
-class SVD(SVDDevicesHelper, Dashboard.Module):
+class SVD(SVDDevicesHelper, Dashboard.Module):  # noqa: F821
     """Display some registers defined in SVD files"""
+
     def __init__(self):
         super().__init__()
         self.__registers = []
@@ -215,9 +223,12 @@ class SVD(SVDDevicesHelper, Dashboard.Module):
                 self.__registers[index] = (p, r, value)
                 changed = True
 
-            line = ansi(f'{p.name} {r.name:{rname_format}} ({addr}): ',
-                        R.style_low)
-            line += ansi(f'{value}', R.style_selected_1 if changed else '')
+            line = ansi(  # noqa: F821
+                f'{p.name} {r.name:{rname_format}} ({addr}): ',
+                R.style_low)  # noqa: F821
+            line += ansi(  # noqa: F821
+                f'{value}',
+                R.style_selected_1 if changed else '')  # noqa: F821
             out.append(line)
         return out
 
