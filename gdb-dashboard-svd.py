@@ -297,7 +297,7 @@ class SVD(SVDDevicesHelper, Dashboard.Module):  # noqa: F821
         SVDInfo(self)
         SVDGet(self)
 
-    def get_register(self, peripheral, register, fmt = None):
+    def get_register(self, peripheral, register, fmt=None):
         p = self.get_peripheral(peripheral)
         if p is None:
             raise Exception(f'Peripheral {peripheral} not found')
@@ -319,7 +319,7 @@ class SVD(SVDDevicesHelper, Dashboard.Module):  # noqa: F821
                 gdb.string_to_argv(arg))
             peripheral, register = args
         except Exception:
-            raise Exception(f'Usage: add [/axut_t] <peripheral> <register>')
+            raise Exception('Usage: add [/axut_t] <peripheral> <register>')
 
         register, is_present = self.get_register(peripheral, register, fmt)
 
@@ -335,7 +335,7 @@ class SVD(SVDDevicesHelper, Dashboard.Module):  # noqa: F821
         try:
             peripheral, register = gdb.string_to_argv(arg)
         except Exception:
-            raise Exception(f'Usage: remove <peripheral> <register>')
+            raise Exception('Usage: remove <peripheral> <register>')
 
         register, is_present = self.get_register(peripheral, register)
 
