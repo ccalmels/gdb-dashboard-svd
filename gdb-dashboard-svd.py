@@ -55,7 +55,7 @@ class SVDDevicesHelper():
         if fmt == '/a':
             return 'address'
         if fmt == '/u':
-            return f'd'
+            return 'd'
         if fmt == '/t':
             return f'#0{register_size_in_bits + 2}b'
         if fmt == '/_t':
@@ -77,11 +77,12 @@ class SVDDevicesHelper():
 
         try:
             if fmt == 'address':
-                value = addr.dereference().cast(gdb_pointer).format_string(styling=styling)
+                value = addr.dereference().cast(gdb_pointer)\
+                                          .format_string(styling=styling)
             else:
                 value = f'{int(addr.dereference()):{fmt}}'
 
-        except Exception as e:
+        except Exception:
             value = '<unavailable>'
 
         return addr.format_string(styling=styling), value
@@ -91,19 +92,21 @@ class SVDDevicesHelper():
 
         if len(args) > 0:
             if args[-1] == '/' or (word and args[-1][0] == '/'):
-                return [ x for x in [ 'a', 'x', 'u', 't', '_t' ] if x.startswith(word) ]
+                return [x for x in ['a', 'x', 'u', 't', '_t']
+                        if x.startswith(word)]
             if word:
                 args.pop()
 
         # strip out options
-        args = [ x for x in args if not x.startswith('/') ]
+        args = [x for x in args if not x.startswith('/')]
 
         if len(args) == 0:
-            peripherals = ( x for d in self.__devices for x in d.peripherals )
-            return [ x.name for x in peripherals if x.name.startswith(word) ]
+            peripherals = (x for d in self.__devices for x in d.peripherals)
+            return [x.name for x in peripherals if x.name.startswith(word)]
 
         if len(args) == 1:
-            return [ x.name for x in self.get_peripheral(args[0]).registers if x.name.startswith(word) ]
+            return [x.name for x in self.get_peripheral(args[0]).registers
+                    if x.name.startswith(word)]
 
         return gdb.COMPLETE_NONE
 
@@ -209,7 +212,8 @@ class SVDGet(SVDCommon):
 
     def invoke(self, argument, from_tty):
         try:
-            args, fmt = SVDDevicesHelper.split_argv(gdb.string_to_argv(argument))
+            args, fmt = SVDDevicesHelper.split_argv(
+                gdb.string_to_argv(argument))
             peripheral, register = args
         except Exception:
             gdb.write('Usage: get [/axut_t] <peripheral> <register>\n')
@@ -235,7 +239,8 @@ class SVDGet(SVDCommon):
                         fmt = '/x'
 
                 fmt = SVDDevicesHelper.convert_format(fmt, register_size)
-                addr, value = SVDDevicesHelper.get_addr_and_value(p, r, fmt, from_tty)
+                addr, value = SVDDevicesHelper.get_addr_and_value(
+                    p, r, fmt, from_tty)
 
                 gdb.write(f'{addr}:\t{value}\n')
             else:
