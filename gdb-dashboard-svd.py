@@ -295,12 +295,7 @@ class SVD(SVDDevicesHelper, Dashboard.Module):  # noqa: F821
         SVDInfo(self)
         SVDGet(self)
 
-    def get_register(self, name, arg):
-        try:
-            peripheral, register = gdb.string_to_argv(arg)
-        except Exception:
-            raise Exception(f'Usage: {name} <peripheral> <register>')
-
+    def get_register(self, peripheral, register):
         p = self.get_peripheral(peripheral)
         if p is None:
             raise Exception(f'Peripheral {peripheral} not found')
@@ -317,7 +312,14 @@ class SVD(SVDDevicesHelper, Dashboard.Module):  # noqa: F821
         return (p, r, None), False
 
     def add(self, arg):
-        register, is_present = self.get_register('add', arg)
+        try:
+            args, fmt = SVDDevicesHelper.split_argv(
+                gdb.string_to_argv(arg))
+            peripheral, register = args
+        except Exception:
+            raise Exception(f'Usage: add [/axut_t] <peripheral> <register>')
+
+        register, is_present = self.get_register(peripheral, register)
 
         if is_present:
             raise Exception(f'{arg} already registered')
@@ -328,7 +330,12 @@ class SVD(SVDDevicesHelper, Dashboard.Module):  # noqa: F821
         self.__registers.append(register)
 
     def remove(self, arg):
-        register, is_present = self.get_register('remove', arg)
+        try:
+            peripheral, register = gdb.string_to_argv(arg)
+        except Exception:
+            raise Exception(f'Usage: remove <peripheral> <register>')
+
+        register, is_present = self.get_register(peripheral, register)
 
         if not is_present:
             raise Exception(f'Register {arg} is not registered')
