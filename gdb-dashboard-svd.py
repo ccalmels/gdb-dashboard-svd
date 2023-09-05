@@ -67,6 +67,24 @@ class SVDDevicesHelper():
         raise Exception('Unkonw format \'fmt\'')
 
     @staticmethod
+    def get_format(r, fmt):
+        pointer_size = 8 * gdb.lookup_type('long').pointer().sizeof
+        register_size = r.size if r.size is not None else pointer_size
+
+        if fmt is None:
+            if pointer_size == register_size \
+               and (len(r.fields) == 0
+                    or
+                    (len(r.fields) == 1
+                     and r.fields[0].bit_width == register_size)):
+                # looks like an address
+                fmt = '/a'
+            else:
+                fmt = '/x'
+
+        return SVDDevicesHelper.convert_format(fmt, register_size)
+
+    @staticmethod
     def get_addr_and_value(p, r, fmt, styling=False):
         pointer_size = 8 * gdb.lookup_type('long').pointer().sizeof
         register_size = r.size if r.size is not None else pointer_size
@@ -223,22 +241,7 @@ class SVDGet(SVDCommon):
         if p is not None:
             r = SVDDevicesHelper.get_register(p, register)
             if r is not None:
-                pointer_size = 8 * gdb.lookup_type('long').pointer().sizeof
-                register_size = r.size if r.size is not None else pointer_size
-
-                # try to guess format if not given
-                if fmt is None:
-                    if pointer_size == register_size \
-                       and (len(r.fields) == 0
-                            or
-                            (len(r.fields) == 1
-                             and r.fields[0].bit_width == register_size)):
-                        # looks like an address
-                        fmt = '/a'
-                    else:
-                        fmt = '/x'
-
-                fmt = SVDDevicesHelper.convert_format(fmt, register_size)
+                fmt = SVDDevicesHelper.get_format(r, fmt)
                 addr, value = SVDDevicesHelper.get_addr_and_value(
                     p, r, fmt, from_tty)
 
@@ -266,15 +269,14 @@ class SVD(SVDDevicesHelper, Dashboard.Module):  # noqa: F821
     def lines(self, term_width, term_height, style_changed):
         out = []
 
-        for index, (p, r, old_value) in enumerate(self.__registers):
+        for index, (p, r, fmt, old_value) in enumerate(self.__registers):
             rname_format = f'>{int(term_width / 4 - len(p.name))}'
-            addr, value = SVDDevicesHelper.get_addr_and_value(
-                p, r, f'#0{(r.size + 3) // 4 + 2}x')
+            addr, value = SVDDevicesHelper.get_addr_and_value(p, r, fmt)
 
             if old_value and old_value == value:
                 changed = False
             else:
-                self.__registers[index] = (p, r, value)
+                self.__registers[index] = (p, r, fmt, value)
                 changed = True
 
             line = ansi(  # noqa: F821
@@ -295,7 +297,7 @@ class SVD(SVDDevicesHelper, Dashboard.Module):  # noqa: F821
         SVDInfo(self)
         SVDGet(self)
 
-    def get_register(self, peripheral, register):
+    def get_register(self, peripheral, register, fmt = None):
         p = self.get_peripheral(peripheral)
         if p is None:
             raise Exception(f'Peripheral {peripheral} not found')
@@ -305,11 +307,11 @@ class SVD(SVDDevicesHelper, Dashboard.Module):  # noqa: F821
             raise Exception(f'Register {register} not found '
                             f'for peripheral {peripheral}')
 
-        for other_p, other_r, v in self.__registers:
+        for other_p, other_r, other_fmt, v in self.__registers:
             if other_p is p and other_r is r:
-                return (p, r, v), True
+                return (p, r, other_fmt, v), True
 
-        return (p, r, None), False
+        return (p, r, SVDDevicesHelper.get_format(r, fmt), None), False
 
     def add(self, arg):
         try:
@@ -319,7 +321,7 @@ class SVD(SVDDevicesHelper, Dashboard.Module):  # noqa: F821
         except Exception:
             raise Exception(f'Usage: add [/axut_t] <peripheral> <register>')
 
-        register, is_present = self.get_register(peripheral, register)
+        register, is_present = self.get_register(peripheral, register, fmt)
 
         if is_present:
             raise Exception(f'{arg} already registered')
@@ -347,9 +349,9 @@ class SVD(SVDDevicesHelper, Dashboard.Module):  # noqa: F821
         elems = []
 
         if len(args) == 1:
-            elems = [p for p, _, _ in self.__registers]
+            elems = [p for p, _, _, _ in self.__registers]
         elif len(args) == 2:
-            elems = [r for p, r, _ in self.__registers if p.name == args[0]]
+            elems = [r for p, r, _, _ in self.__registers if p.name == args[0]]
         else:
             return gdb.COMPLETE_NONE
 
