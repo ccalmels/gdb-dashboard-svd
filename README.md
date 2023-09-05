@@ -27,8 +27,8 @@ dashboard svd load ./cortex-m4-scb.svd ./nrf5340_application.svd
 ### Add some registers to display
 
 ```
-dashboard svd add SCB CFSR_UFSR_BFSR_MMFSR
-dashboard svd add SCB BFAR
+dashboard svd /_t add SCB CFSR_UFSR_BFSR_MMFSR
+dashboard svd /a add SCB BFAR
 ```
 
 ### Remove some registers
@@ -48,4 +48,4 @@ dashboard svd clear
 
 This module also creates two gdb commands:
 * ```svd info [<peripheral> [<register>]]```
-* ```svd get <peripheral> <register>```
+* ```svd get [/auxt_t] <peripheral> <register>```
