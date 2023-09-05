@@ -133,9 +133,9 @@ class SVDDevicesHelper():
                 base = gdb.Value(p.base_address)\
                           .cast(gdb.lookup_type('long').pointer())
 
-                yield f'\t{p.name}'\
-                    f'\tbase: {base}'\
-                    f' ({SVDDevicesHelper.one_liner(p.description)})\n'
+                yield (f'\t{p.name}'
+                       f'\tbase: {base}'
+                       f' ({SVDDevicesHelper.one_liner(p.description)})\n')
 
     def info_peripheral(self, peripheral):
         p = self.get_peripheral(peripheral)
@@ -146,9 +146,9 @@ class SVDDevicesHelper():
             yield f'{p.name} base: {base}\n'
 
             for r in p.registers:
-                yield f'\t{r.name}'\
-                    f'\toffset: {r.address_offset:#x}'\
-                    f' ({SVDDevicesHelper.one_liner(r.description)})\n'
+                yield (f'\t{r.name}'
+                       f'\toffset: {r.address_offset:#x}'
+                       f' ({SVDDevicesHelper.one_liner(r.description)})\n')
 
     def info_register(self, peripheral, register):
         p = self.get_peripheral(peripheral)
