@@ -183,7 +183,7 @@ class SVDGet(SVDCommon):
             if r is not None:
                 addr, value = self._svd_devices_helper.get_addr_and_value(p, r)
 
-                gdb.write(f'{addr}: {value}\n')
+                gdb.write(f'{addr}:\t{value}\n')
             else:
                 gdb.write(f'unknown register {register}\n')
         else:
