@@ -119,14 +119,13 @@ class SVDDevicesHelper():
         args = [x for x in args if not x.startswith('/')]
 
         if len(args) == 0:
-            peripherals = (x for d in self.__devices for x in d.peripherals)
-            return [x.name for x in peripherals if x.name.startswith(word)]
+            elems = (x for d in self.__devices for x in d.peripherals)
+        elif len(args) == 1:
+            elems = self.get_peripheral(args[0]).registers
+        else:
+            return gdb.COMPLETE_NONE
 
-        if len(args) == 1:
-            return [x.name for x in self.get_peripheral(args[0]).registers
-                    if x.name.startswith(word)]
-
-        return gdb.COMPLETE_NONE
+        return [x.name for x in elems if x.name.startswith(word)]
 
     @staticmethod
     def one_liner(description):
@@ -345,13 +344,15 @@ class SVD(SVDDevicesHelper, Dashboard.Module):  # noqa: F821
         self.__registers.remove(register)
 
     def remove_complete(self, text, word):
-        args = text.split(' ')
-        elems = []
+        args = gdb.string_to_argv(text)
 
-        if len(args) == 1:
-            elems = [p for p, _, _, _ in self.__registers]
-        elif len(args) == 2:
-            elems = [r for p, r, _, _ in self.__registers if p.name == args[0]]
+        if len(args) > 0 and word:
+            args.pop()
+
+        if len(args) == 0:
+            elems = (p for p, _, _, _ in self.__registers)
+        elif len(args) == 1:
+            elems = (r for p, r, _, _ in self.__registers if p.name == args[0])
         else:
             return gdb.COMPLETE_NONE
 
