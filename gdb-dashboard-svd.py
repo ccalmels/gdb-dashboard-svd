@@ -24,18 +24,12 @@ class SVDDevicesHelper():
         return [x.name for x in self.__devices]
 
     def get_peripheral(self, name):
-        for d in self.__devices:
-            for p in d.peripherals:
-                if p.name == name:
-                    return p
-        return None
+        return next((p for d in self.__devices for p in d.peripherals
+                     if p.name == name), None)
 
     @staticmethod
     def get_register(peripheral, name):
-        for r in peripheral.registers:
-            if r.name == name:
-                return r
-        return None
+        return next((r for r in peripheral.registers if r.name == name), None)
 
     @staticmethod
     def get_addr_and_value(p, r):
