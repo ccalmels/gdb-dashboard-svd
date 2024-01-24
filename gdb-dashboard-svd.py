@@ -29,7 +29,10 @@ class SVDDevicesHelper():
 
     @staticmethod
     def get_register(peripheral, name):
-        return next((r for r in peripheral.registers if r.name == name), None)
+        return next((
+            r for r in peripheral.registers
+            if (r.display_name if r.display_name else r.name) == name
+        ), None)
 
     @staticmethod
     def split_argv(args):
@@ -119,13 +122,14 @@ class SVDDevicesHelper():
         args = [x for x in args if not x.startswith('/')]
 
         if len(args) == 0:
-            elems = (x for d in self.__devices for x in d.peripherals)
+            elems = (x.name for d in self.__devices for x in d.peripherals)
         elif len(args) == 1:
-            elems = self.get_peripheral(args[0]).registers
+            elems = (x.display_name if x.display_name else x.name
+                     for x in self.get_peripheral(args[0]).registers)
         else:
             return gdb.COMPLETE_NONE
 
-        return [x.name for x in elems if x.name.startswith(word)]
+        return [x for x in elems if x.startswith(word)]
 
     @staticmethod
     def one_liner(description):
@@ -154,7 +158,8 @@ class SVDDevicesHelper():
             yield f'{p.name} base: {base}\n'
 
             for r in p.registers:
-                yield (f'\t{r.name}'
+                name = r.display_name if r.display_name else r.name
+                yield (f'\t{name}'
                        f'\toffset: {r.address_offset:#x}'
                        f' ({SVDDevicesHelper.one_liner(r.description)})\n')
 
@@ -165,8 +170,9 @@ class SVDDevicesHelper():
             if r is not None:
                 addr = gdb.Value(p.base_address + r.address_offset)\
                           .cast(gdb.lookup_type('long').pointer())
+                name = r.display_name if r.display_name else r.name
 
-                yield f'{r.name} addr: {addr} (access: {r.access})\n'
+                yield f'{name} addr: {addr} (access: {r.access})\n'
 
                 for f in r.fields:
                     if f.bit_width == 1:
