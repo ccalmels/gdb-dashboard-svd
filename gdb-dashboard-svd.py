@@ -28,11 +28,15 @@ class SVDDevicesHelper():
                      if p.name == name), None)
 
     @staticmethod
+    def get_register_name(register):
+        if register.display_name is not None:
+            return register.display_name
+        return register.name
+
+    @staticmethod
     def get_register(peripheral, name):
-        return next((
-            r for r in peripheral.registers
-            if (r.display_name if r.display_name else r.name) == name
-        ), None)
+        return next((r for r in peripheral.registers
+                     if SVDDevicesHelper.get_register_name(r) == name), None)
 
     @staticmethod
     def split_argv(args):
@@ -124,8 +128,8 @@ class SVDDevicesHelper():
         if len(args) == 0:
             elems = (x.name for d in self.__devices for x in d.peripherals)
         elif len(args) == 1:
-            elems = (x.display_name if x.display_name else x.name
-                     for x in self.get_peripheral(args[0]).registers)
+            elems = (SVDDevicesHelper.get_register_name(r)
+                     for r in self.get_peripheral(args[0]).registers)
         else:
             return gdb.COMPLETE_NONE
 
@@ -158,8 +162,7 @@ class SVDDevicesHelper():
             yield f'{p.name} base: {base}\n'
 
             for r in p.registers:
-                name = r.display_name if r.display_name else r.name
-                yield (f'\t{name}'
+                yield (f'\t{SVDDevicesHelper.get_register_name(r)}'
                        f'\toffset: {r.address_offset:#x}'
                        f' ({SVDDevicesHelper.one_liner(r.description)})\n')
 
@@ -170,7 +173,7 @@ class SVDDevicesHelper():
             if r is not None:
                 addr = gdb.Value(p.base_address + r.address_offset)\
                           .cast(gdb.lookup_type('long').pointer())
-                name = r.display_name if r.display_name else r.name
+                name = SVDDevicesHelper.get_register_name(r)
 
                 yield f'{name} addr: {addr} (access: {r.access})\n'
 
