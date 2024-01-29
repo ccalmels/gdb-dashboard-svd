@@ -46,7 +46,7 @@ class SVDDevicesHelper():
             return args, None
 
         if options[0] not in ['/a', '/x', '/u', '/t', '/_t']:
-            raise Exception(f'unknown option: {options[0]}')
+            raise Exception(f'unknown format: {options[0]}')
 
         return parameters, options[0]
 
@@ -214,7 +214,7 @@ class SVDInfo(SVDCommon):
             info_iterator = self._svd_devices_helper.\
                 info_register(args[0], args[1])
         else:
-            gdb.write('Too much arguments\n')
+            gdb.write('Usage: info [peripheral [register]]\n')
             return
 
         for i in info_iterator:
@@ -232,7 +232,8 @@ class SVDGet(SVDCommon):
             args, fmt = SVDDevicesHelper.split_argv(
                 gdb.string_to_argv(argument))
             peripheral, register = args
-        except Exception:
+        except Exception as e:
+            gdb.write(f'Exception: {e}\n')
             gdb.write('Usage: get [/axut_t] <peripheral> <register>\n')
             return
 
