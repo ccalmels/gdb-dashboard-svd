@@ -24,18 +24,31 @@ class SVDDevicesHelper():
         return [x.name for x in self.__devices]
 
     def get_peripheral(self, name):
-        return next((p for d in self.__devices for p in d.peripherals
+        return next((p for d in self.__devices for p in d.get_peripherals()
                      if p.name == name), None)
 
     @staticmethod
     def get_register_name(register):
-        if register.display_name is not None:
-            return register.display_name
+        try:
+            if register.display_name is not None:
+                return register.display_name
+        except AttributeError:
+            pass
         return register.name
 
     @staticmethod
+    def get_register_access(register):
+        try:
+            if register.access:
+                return register.access.value
+        except AttributeError:
+            pass
+
+        return None
+
+    @staticmethod
     def get_register(peripheral, name):
-        return next((r for r in peripheral.registers
+        return next((r for r in peripheral.get_registers()
                      if SVDDevicesHelper.get_register_name(r) == name), None)
 
     @staticmethod
@@ -80,10 +93,10 @@ class SVDDevicesHelper():
 
         if fmt is None:
             if pointer_size == register_size \
-               and (len(r.fields) == 0
+               and (len(r.get_fields()) == 0
                     or
-                    (len(r.fields) == 1
-                     and r.fields[0].bit_width == register_size)):
+                    (len(r.get_fields()) == 1
+                     and r.get_fields()[0].bit_width == register_size)):
                 # looks like an address
                 fmt = '/a'
             else:
@@ -126,10 +139,11 @@ class SVDDevicesHelper():
         args = [x for x in args if not x.startswith('/')]
 
         if len(args) == 0:
-            elems = (x.name for d in self.__devices for x in d.peripherals)
+            elems = (x.name for d in self.__devices
+                     for x in d.get_peripherals())
         elif len(args) == 1:
             elems = (SVDDevicesHelper.get_register_name(r)
-                     for r in self.get_peripheral(args[0]).registers)
+                     for r in self.get_peripheral(args[0]).get_registers())
         else:
             return gdb.COMPLETE_NONE
 
@@ -145,7 +159,7 @@ class SVDDevicesHelper():
         for d in self.__devices:
             yield f'{d.name}:\n'
 
-            for p in d.peripherals:
+            for p in d.get_peripherals():
                 base = gdb.Value(p.base_address)\
                           .cast(gdb.lookup_type('long').pointer())
 
@@ -161,7 +175,7 @@ class SVDDevicesHelper():
 
             yield f'{p.name} base: {base}\n'
 
-            for r in p.registers:
+            for r in p.get_registers():
                 yield (f'\t{SVDDevicesHelper.get_register_name(r)}'
                        f'\toffset: {r.address_offset:#x}'
                        f' ({SVDDevicesHelper.one_liner(r.description)})\n')
@@ -175,9 +189,10 @@ class SVDDevicesHelper():
                           .cast(gdb.lookup_type('long').pointer())
                 name = SVDDevicesHelper.get_register_name(r)
 
-                yield f'{name} addr: {addr} (access: {r.access})\n'
+                yield f'{name} addr: {addr} (access: '
+                f'{SVDDevicesHelper.get_register_access(r)})\n'
 
-                for f in r.fields:
+                for f in r.get_fields():
                     if f.bit_width == 1:
                         bits = f'{f.bit_offset}'
                     else:
@@ -335,7 +350,8 @@ class SVD(SVDDevicesHelper, Dashboard.Module):  # noqa: F821
         if is_present:
             raise Exception(f'{arg} already registered')
 
-        if register[1].access in ['write-only', 'writeOnce']:
+        if SVDDevicesHelper.get_register_access(register[1])\
+           in ['write-only', 'writeOnce']:
             raise Exception(f'{arg} not readable register')
 
         self.__registers.append(register)
