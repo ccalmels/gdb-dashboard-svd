@@ -280,6 +280,7 @@ class SVD(SVDDevicesHelper, Dashboard.Module):  # noqa: F821
 
         for index, (p, r, fmt, old_value) in enumerate(self.__registers):
             rname_format = f'>{int(term_width / 4 - len(p.name))}'
+            rname = SVDDevicesHelper.get_register_name(r)
             addr, value = SVDDevicesHelper.get_addr_and_value(p, r, fmt)
 
             if old_value and old_value == value:
@@ -289,7 +290,7 @@ class SVD(SVDDevicesHelper, Dashboard.Module):  # noqa: F821
                 changed = True
 
             line = ansi(  # noqa: F821
-                f'{p.name} {r.name:{rname_format}} ({addr}): ',
+                f'{p.name} {rname:{rname_format}} ({addr}): ',
                 R.style_low)  # noqa: F821
             line += ansi(  # noqa: F821
                 f'{value}',
