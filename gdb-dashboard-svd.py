@@ -94,7 +94,8 @@ class SVDDevicesHelper():
     @staticmethod
     def get_addr_and_value(p, r, fmt, styling=False):
         pointer_size = 8 * gdb.lookup_type('long').pointer().sizeof
-        register_size = r.size if r.size is not None else pointer_size
+        register_size = (r.size if r.size is not None and r.size != 0
+                         else pointer_size)
         gdb_pointer = gdb.selected_frame().architecture()\
                                           .integer_type(register_size, False)\
                                           .pointer()
