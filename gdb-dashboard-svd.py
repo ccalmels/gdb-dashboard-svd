@@ -175,8 +175,10 @@ class SVDDevicesHelper():
                 addr = gdb.Value(p.base_address + r.address_offset)\
                           .cast(gdb.lookup_type('long').pointer())
                 name = SVDDevicesHelper.get_register_name(r)
+                desc = SVDDevicesHelper.one_liner(r.description)
 
-                yield f'{name} addr: {addr} (access: {r.access})\n'
+                yield (f'{name} addr: {addr}'
+                       f' (access: {r.access}, desc: {desc})\n')
 
                 for f in r.fields:
                     if f.bit_width == 1:
