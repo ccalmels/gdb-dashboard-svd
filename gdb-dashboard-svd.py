@@ -114,6 +114,9 @@ class SVDDevicesHelper():
         return addr.format_string(styling=styling), value
 
     def complete(self, text, word):
+        if word is None:
+            return gdb.COMPLETE_NONE
+
         args = gdb.string_to_argv(text)
 
         if len(args) > 0:
@@ -129,8 +132,11 @@ class SVDDevicesHelper():
         if len(args) == 0:
             elems = (x.name for d in self.__devices for x in d.peripherals)
         elif len(args) == 1:
+            peripheral = self.get_peripheral(args[0])
+            if peripheral is None:
+                return gdb.COMPLETE_NONE
             elems = (SVDDevicesHelper.get_register_name(r)
-                     for r in self.get_peripheral(args[0]).registers)
+                     for r in peripheral.registers)
         else:
             return gdb.COMPLETE_NONE
 
@@ -358,6 +364,9 @@ class SVD(SVDDevicesHelper, Dashboard.Module):  # noqa: F821
         self.__registers.remove(register)
 
     def remove_complete(self, text, word):
+        if word is None:
+            return gdb.COMPLETE_NONE
+
         args = gdb.string_to_argv(text)
 
         if len(args) > 0 and word:
