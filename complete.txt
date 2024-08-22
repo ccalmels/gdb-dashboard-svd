@@ -1,0 +1,65 @@
+svd info [TAB]:
+
+text: '' word: 'None' args: '[]'
+text: '' word: '' args: '[]'
+
+svd info S[TAB]:
+
+text: 'S' word: 'None' args: '['S']'
+text: 'S' word: 'S' args: '['S']'
+args: '[]' 0 word:'S'
+
+svd info /a[TAB]
+
+text: '/a' word: 'None' args: '['/a']'
+text: '/a' word: 'a' args: '['/a']'
+
+svd info /a S[TAB]
+
+text: '/a S' word: 'None' args: '['/a', 'S']'
+text: '/a S' word: 'S' args: '['/a', 'S']'
+args: '[]' 0 word:'S'
+
+svd info SCB[TAB]
+
+text: 'SCB' word: 'None' args: '['SCB']'
+text: 'SCB' word: 'SCB' args: '['SCB']'
+args: '[]' 0 word:'SCB'
+
+svd info SCB [TAB]
+
+text: 'SCB ' word: 'None' args: '['SCB']'
+text: 'SCB ' word: '' args: '['SCB']'
+
+svd info /[TAB]
+
+text: '/' word: 'None' args: '['/']'
+text: '/' word: '' args: '['/']'
+
+svd info SCB A[TAB]
+
+text: 'SCB A' word: 'None' args: '['SCB', 'A']'
+text: 'SCB A' word: 'A' args: '['SCB', 'A']'
+args: '['SCB']' 1 word:'A'
+
+svd info toto[TAB]
+
+text: 'toto' word: 'None' args: '['toto']'
+text: 'toto' word: 'toto' args: '['toto']'
+pop args
+args: '[]' 0 word:'toto'
+
+svd info toto foo[TAB]
+
+text: 'toto foo' word: 'None' args: '['toto', 'foo']'
+text: 'toto foo' word: 'foo' args: '['toto', 'foo']'
+pop args
+args: '['toto']' 1 word:'foo'
+Traceback (most recent call last):
+  File "/home/boulte/.gdbinit.d/gdb-dashboard-svd.py", line 217, in complete
+    return self._svd_devices_helper.complete(text, words)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/boulte/.gdbinit.d/gdb-dashboard-svd.py", line 141, in complete
+    for r in self.get_peripheral(args[0]).registers)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'registers'
