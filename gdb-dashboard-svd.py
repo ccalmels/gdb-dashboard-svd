@@ -29,14 +29,43 @@ class SVDDevicesHelper():
 
     @staticmethod
     def get_register_name(register):
-        if register.display_name is not None:
+        if hasattr(register, 'display_name') and register.display_name is not None:
             return register.display_name
-        return register.name
+        if hasattr(register, 'name') and register.name is not None:
+            return register.name
+
+        return None
+
+    @staticmethod
+    def get_register_names(registers):
+        result = []
+        for reg in registers:
+            if hasattr(reg, 'registers'):
+                result = result + SVDDevicesHelper.get_register_names(reg.registers)
+            elif hasattr(reg, 'clusters'):
+                result = result + SVDDevicesHelper.get_register_names(reg.clusters)
+            else:
+                result.append(SVDDevicesHelper.get_register_name(reg))
+        return result
+
+    @staticmethod
+    def filter_registers_by_name(registers, name):
+        for reg in registers:
+            if hasattr(reg, 'registers'):
+                result = SVDDevicesHelper.filter_registers_by_name(reg.registers, name)
+                if result is not None:
+                    return result
+            elif hasattr(reg, 'clusters'):
+                result = SVDDevicesHelper.filter_registers_by_name(reg.clusters, name)
+                if result is not None:
+                    return result
+            elif SVDDevicesHelper.get_register_name(reg) == name:
+                return reg
+        return None
 
     @staticmethod
     def get_register(peripheral, name):
-        return next((r for r in peripheral.registers
-                     if SVDDevicesHelper.get_register_name(r) == name), None)
+        return SVDDevicesHelper.filter_registers_by_name(peripheral.registers, name)
 
     @staticmethod
     def split_argv(args):
@@ -135,8 +164,7 @@ class SVDDevicesHelper():
             peripheral = self.get_peripheral(args[0])
             if peripheral is None:
                 return gdb.COMPLETE_NONE
-            elems = (SVDDevicesHelper.get_register_name(r)
-                     for r in peripheral.registers)
+            elems = SVDDevicesHelper.get_register_names(peripheral.registers)
         else:
             return gdb.COMPLETE_NONE
 
