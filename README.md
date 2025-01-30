@@ -18,6 +18,16 @@ $ pip3 install -r ./requirements.txt
 
 Then simply add gdb-dashboad-svd.py in your ~/.gdbinit.d/ directory.
 
+### Load SVD files
+In order to overload the `dashboard svd load` command, you have to define the following environment variable (in your .bashrc for example):
+```
+export SVD_FOLDER="$HOME/cmsis-svd/data/"
+```
+
+Structure of the folder should be `vendor/device.svd`. For example, the nRF5340 SVD file should be in `$HOME/cmsis-svd/data/Nordic/nRF5340.svd`.
+
+You can download a lot of SVD files from [cmsis-svd-data](https://github.com/cmsis-svd/cmsis-svd-data/tree/main/data).
+
 ## Usage
 
 All commands benefit from a usefull completion.

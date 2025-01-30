@@ -10,8 +10,6 @@ class SVDDevicesHelper():
         self.__devices = []
 
     def load(self, files):
-        self.__devices.clear()
-
         for f in files:
             f = os.path.expandvars(os.path.expanduser(f))
             device = SVDParser.for_xml_file(f).get_device()
@@ -304,6 +302,17 @@ class SVD(SVDDevicesHelper, Dashboard.Module):  # noqa: F821
     def __init__(self):
         super().__init__()
         self.__registers = []
+        self.vendors = {}
+        svd_folder = os.getenv('SVD_FOLDER')
+
+        if svd_folder:
+            vendor_names = [entry.name for entry in os.scandir(
+                svd_folder) if entry.is_dir()]
+            for vendor in vendor_names:
+                vendor_path = os.path.join(svd_folder, vendor)
+                fnames = [entry.name for entry in os.scandir(
+                    vendor_path) if entry.is_file() and entry.name.lower().endswith(".svd")]
+                self.vendors[vendor] = fnames
 
     def label(self):
         names = self.devices_name()
@@ -336,13 +345,47 @@ class SVD(SVDDevicesHelper, Dashboard.Module):  # noqa: F821
         return out
 
     def load(self, arg):
-        if not arg:
-            raise Exception('No file specified')
+        args = gdb.string_to_argv(arg)
+        if len(args) == 1:
+            gdb.write("Loading SVD file {}...\n".format(args[0]))
+            f = args[0]
+        elif len(args) == 2:
+            gdb.write("Loading SVD file {}/{}...\n".format(args[0], args[1]))
+            f = os.path.join(os.getenv('SVD_FOLDER'), args[0], args[1])
+        else:
+            raise gdb.GdbError(
+                "Usage: svd load <vendor> <device.svd> or svd_load <path/to/filename.svd>\n")
+        try:
+            SVDDevicesHelper.load(self, gdb.string_to_argv(f))
+            SVDInfo(self)
+            SVDGet(self)
+        except Exception as e:
+            raise gdb.GdbError(
+                "Could not load SVD file {} : {}...\n".format(f, e))
 
-        self.clear(None)
-        SVDDevicesHelper.load(self, gdb.string_to_argv(arg))
-        SVDInfo(self)
-        SVDGet(self)
+    def load_complete(self, text, word):
+        if len(self.vendors) == 0:
+            return gdb.COMPLETE_FILENAME
+        if word is None:
+            return gdb.COMPLETE_NONE
+
+        args = gdb.string_to_argv(text)
+        num_args = len(args)
+        if text.endswith(" "):
+            num_args += 1
+        if not text:
+            num_args = 1
+
+        # "svd load <tab>" or "svd_load ST<tab>"
+        if num_args == 1:
+            prefix = word.lower()
+            return [vendor for vendor in self.vendors if vendor.lower().startswith(prefix)]
+        # "svd load STMicro<tab>" or "svd_load STMicro STM32F1<tab>"
+        elif num_args == 2 and args[0] in self.vendors:
+            prefix = word.lower()
+            filenames = self.vendors[args[0]]
+            return [fname for fname in filenames if fname.lower().startswith(prefix)]
+        return gdb.COMPLETE_NONE
 
     def get_register(self, peripheral, register, fmt=None):
         p = self.get_peripheral(peripheral)
@@ -417,7 +460,7 @@ class SVD(SVDDevicesHelper, Dashboard.Module):  # noqa: F821
             'load': {
                 'action': self.load,
                 'doc': 'Load SVD files',
-                'complete': gdb.COMPLETE_FILENAME,
+                'complete': self.load_complete,
             },
             'add': {
                 'action': self.add,
