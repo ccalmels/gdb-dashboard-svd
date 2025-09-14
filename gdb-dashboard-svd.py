@@ -27,6 +27,15 @@ class SVDDevicesHelper():
         return next((p for d in self.__devices for p in d.peripherals
                      if p.name == name), None)
 
+    def search_by_region(self, start, end):
+        for d in self.__devices:
+            for p in d.peripherals:
+                for r in p.registers:
+                    addr = p.base_address + r.address_offset
+
+                    if addr >= start and addr <= end:
+                        yield (r.name, addr)
+
     @staticmethod
     def get_register_name(register):
         if hasattr(register, 'display_name') and register.display_name is not None:
@@ -267,6 +276,37 @@ class SVDInfo(SVDCommon):
             gdb.write(i)
 
 
+class SVDSearch(SVDCommon):
+    """Search for register by addresses in SVD files"""
+
+    def __init__(self, svd_devices_helper):
+        super().__init__(svd_devices_helper, 'search')
+
+    def invoke(self, argument, from_tty):
+        args = gdb.string_to_argv(argument)
+
+        if len(args) == 0:
+            gdb.write('Usage: search start_address [end_address]\n')
+            return
+
+        pointer_type = gdb.lookup_type('long').pointer()
+        pointer_size = pointer_type.sizeof
+        pointer_fmt = f'#0{pointer_size * 2 + 2}x'
+
+        start = gdb.parse_and_eval(args.pop(0))
+
+        if args:
+            end = gdb.parse_and_eval(args.pop(0))
+        else:
+            end = start
+
+        for name, addr in self._svd_devices_helper.search_by_region(start, end):
+            gdb.write(f'{addr:{pointer_fmt}}: {name}\n')
+
+    def complete(self, text, words):
+        return gdb.COMPLETE_NONE
+
+
 class SVDGet(SVDCommon):
     """Get the addresse and value of a register"""
 
@@ -342,6 +382,7 @@ class SVD(SVDDevicesHelper, Dashboard.Module):  # noqa: F821
         self.clear(None)
         SVDDevicesHelper.load(self, gdb.string_to_argv(arg))
         SVDInfo(self)
+        SVDSearch(self)
         SVDGet(self)
 
     def get_register(self, peripheral, register, fmt=None):

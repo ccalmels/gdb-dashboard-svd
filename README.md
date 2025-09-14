@@ -57,9 +57,10 @@ dashboard svd clear
 
 ## Standalone commmands
 
-This module also creates two gdb commands:
+This module also creates three gdb commands:
 * ```svd info [<peripheral> [<register>]]```
 * ```svd get [/auxt_t] <peripheral> <register>```
+* ```svd search <start_address> [<end_address>]```
 
 Example:
 ```
@@ -70,4 +71,17 @@ HFSR addr: 0xe000ed2c (access: read-write)
         VECTTBL [1] (VECTTBL)
 >>> svd get /_t SCB HFSR
 0xe000ed2c:     0b0000_0000_0000_0000_0000_0000_0000_0000
+>>> svd search 0xe000ed08 0xe000ed08+0x10
+0xe000ed0c: AIRCR_S
+0xe000ed0c: AIRCR_NS
+0xe000ed0c: AIRCR
+0xe000ed14: CCR_S
+0xe000ed14: CCR_NS
+0xe000ed14: CCR
+0xe000ed18: SHPR1_S
+0xe000ed18: SHPR1_NS
+0xe000ed18: SHPR1
+0xe000ed08: VTOR_S
+0xe000ed08: VTOR_NS
+0xe000ed08: VTOR
 ```
