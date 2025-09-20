@@ -34,7 +34,7 @@ class SVDDevicesHelper():
                     addr = p.base_address + r.address_offset
 
                     if addr >= start and addr <= end:
-                        yield (r.name, addr)
+                        yield (p.name, r.name, addr)
 
     @staticmethod
     def get_register_name(register):
@@ -300,8 +300,8 @@ class SVDSearch(SVDCommon):
         else:
             end = start
 
-        for name, addr in self._svd_devices_helper.search_by_region(start, end):
-            gdb.write(f'{addr:{pointer_fmt}}: {name}\n')
+        for pname, rname, addr in self._svd_devices_helper.search_by_region(start, end):
+            gdb.write(f'{addr:{pointer_fmt}}: {pname} {rname}\n')
 
     def complete(self, text, words):
         return gdb.COMPLETE_NONE
