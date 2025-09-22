@@ -5,13 +5,13 @@
 A [gdb-dashboard](https://github.com/cyrus-and/gdb-dashboard) module to display SVD registers.
 ![example](gdb-dashboard-svd.png)
 
-Unlike other projects, this one adds the ability to load several SVD files at once. Most of the time, vendors' SVD files does not contain ARM base registers that are useful for debugging : SCB CFSR for example.
+Unlike other projects, this one adds the ability to load several SVD files at once. Most of the time, vendors' SVD file does not contain ARM base registers that are useful for debugging : SCB CFSR for example.
 
 Here's the [Nordic nRF5340 svd file](https://raw.githubusercontent.com/NordicSemiconductor/nrfx/master/mdk/nrf5340_application.svd) and you can see that the System Control Block is not present. To address this, just use the SVD from Nordic and the Cortex-M33 SVD form ARM at the same time.
 
 ## Installation
 
-This project depends on [cmsis-svd](https://github.com/cmsis-svd/cmsis-svd) and requires a least gdb-dashboard version 0.17.
+This project depends on [cmsis-svd](https://github.com/cmsis-svd/cmsis-svd) and requires at least gdb-dashboard version 0.17.
 ```
 $ pip3 install -r ./requirements.txt
 ```
