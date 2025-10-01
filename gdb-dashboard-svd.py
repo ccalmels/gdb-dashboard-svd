@@ -406,12 +406,12 @@ class SVD(SVDDevicesHelper, Dashboard.Module):  # noqa: F821
 
             line = ansi(  # noqa: F821
                 f"{p.name} {rname:{rname_format}} ({addr}): ",
-                R.style_low,
-            )  # noqa: F821
+                R.style_low,  # noqa: F821
+            )
             line += ansi(  # noqa: F821
                 f"{value}",
-                R.style_selected_1 if changed else "",
-            )  # noqa: F821
+                R.style_selected_1 if changed else "",  # noqa: F821
+            )
             out.append(line)
         return out
 
