@@ -65,10 +65,10 @@ This module also creates three gdb commands:
 Example:
 ```
 >>> svd info SCB HFSR
-HFSR addr: 0xe000ed2c (access: read-write)
-        DEBUGEVT        [31] (DEBUGEVT)
-        FORCED  [30] (Forced)
-        VECTTBL [1] (VECTTBL)
+HFSR addr: 0xe000ed2c (access: SVDAccessType.READ_WRITE, desc: HFSR)
+	DEBUGEVT        [31] (DEBUGEVT)
+	FORCED          [30] (Forced)
+	VECTTBL         [1] (VECTTBL)
 >>> svd get /_t SCB HFSR
 0xe000ed2c:     0b0000_0000_0000_0000_0000_0000_0000_0000
 >>> svd search 0xe000ed08 0xe000ed08+0x10

@@ -217,8 +217,7 @@ class SVDDevicesHelper:
                 base = gdb.Value(p.base_address).cast(gdb.lookup_type("long").pointer())
 
                 yield (
-                    f"\t{p.name}"
-                    f"\tbase: {base}"
+                    f"\t{p.name:<8}base: {base}"
                     f" ({SVDDevicesHelper.one_liner(p.description)})\n"
                 )
 
@@ -231,8 +230,8 @@ class SVDDevicesHelper:
 
             for r in p.registers:
                 yield (
-                    f"\t{SVDDevicesHelper.get_register_name(r)}"
-                    f"\toffset: {r.address_offset:#x}"
+                    f"\t{SVDDevicesHelper.get_register_name(r):<16}"
+                    f"offset: {r.address_offset:#x}"
                     f" ({SVDDevicesHelper.one_liner(r.description)})\n"
                 )
 
@@ -255,8 +254,8 @@ class SVDDevicesHelper:
                     else:
                         bits = f"{f.bit_width + f.bit_offset - 1}:{f.bit_offset}"
                     yield (
-                        f"\t{f.name}"
-                        f"\t[{bits}]"
+                        f"\t{f.name:<16}"
+                        f"[{bits}]"
                         f" ({SVDDevicesHelper.one_liner(f.description)})\n"
                     )
 
